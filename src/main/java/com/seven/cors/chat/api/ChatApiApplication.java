@@ -1,4 +1,4 @@
-package com.seven.cors.chat_api;
+package com.seven.cors.chat.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
