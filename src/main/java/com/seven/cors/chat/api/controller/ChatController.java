@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dto.ChatRequest;
+import dto.ChatRequestDTO;
 
 import java.util.List;
 import java.util.Arrays;
@@ -35,7 +35,7 @@ public class ChatController {
     
     
     @PostMapping
-    public ResponseEntity<String> chat(@RequestBody ChatRequest request) {
+    public ResponseEntity<String> chat(@RequestBody ChatRequestDTO request) {
         return ResponseEntity.ok("Resposta do chatbot aqui...");
     }
     
