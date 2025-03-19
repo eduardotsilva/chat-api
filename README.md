@@ -1,4 +1,4 @@
-# 7cors-api 🧠💭  
+# 7cors **chat-api 🧠💭 **
 **Chatbot baseado no modelo Mistral, integrado ao Spring Boot e Ollama**  
 
 ## 🚀 Visão Geral  
