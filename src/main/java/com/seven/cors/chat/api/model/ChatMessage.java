@@ -17,6 +17,8 @@ public class ChatMessage {
     private UUID id;
 
     private String userMessage;
+    @Lob
+    @Column(columnDefinition = "CLOB") 
     private String botResponse;
     private LocalDateTime timestamp;
 
