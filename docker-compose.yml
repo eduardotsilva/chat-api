@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_MODELS=mistral
+    command: ["serve"]
+
+  h2db:
+    image: oscarfonts/h2
+    container_name: h2-database
+    restart: always
+    ports:
+      - "1521:1521"
+      - "81:81"
+    environment:
+      - H2_OPTIONS=-ifNotExists
+
+volumes:
+  ollama-data:
+    driver: local
