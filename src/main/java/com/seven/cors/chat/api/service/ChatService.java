@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import lombok.RequiredArgsConstructor;
 
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -24,8 +25,8 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String OLLAMA_URL = "http://localhost:11434/api/generate"; 
-    
+    private static final String OLLAMA_URL = "http://localhost:11434/api/generate";
+
     public ChatMessage processUserMessage(String userMessage) {
         // Enviar para a IA
         String botResponse = sendToOllama(userMessage);
@@ -55,10 +56,14 @@ public class ChatService {
         // Processar manualmente a resposta NDJSON
         return extractResponseFromNDJSON(response.getBody());
     }
-    
+
     private String extractResponseFromNDJSON(String ndjsonResponse) {
         try {
-            List<String> jsonLines = List.of(ndjsonResponse.split("\n"));
+            // Converter manualmente para UTF-8 para evitar caracteres corrompidos
+            byte[] bytes = ndjsonResponse.getBytes(StandardCharsets.ISO_8859_1);
+            String utf8Response = new String(bytes, StandardCharsets.UTF_8);
+
+            List<String> jsonLines = List.of(utf8Response.split("\n"));
 
             List<String> responses = jsonLines.stream().map(line -> {
                 try {
@@ -75,7 +80,4 @@ public class ChatService {
             return "Erro ao interpretar resposta da IA.";
         }
     }
-
-
-
 }
