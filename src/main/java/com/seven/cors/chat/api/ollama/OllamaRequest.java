@@ -10,4 +10,5 @@ import lombok.Setter;
 public class OllamaRequest {
     private String model;
     private String prompt;
+    private boolean stream;
 }
