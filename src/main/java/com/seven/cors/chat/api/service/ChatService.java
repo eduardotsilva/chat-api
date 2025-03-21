@@ -128,11 +128,14 @@ public class ChatService {
         }
     }
 
-    private void tratarErroStreaming(ResponseBodyEmitter emissor, String mensagem, Exception erro) {
+    private void tratarErroStreaming(ResponseBodyEmitter emissor, String mensagemErro, Exception excecaoOriginal) {
         try {
-            emissor.send(mensagem);
-            emissor.completeWithError(erro);
-        } catch (IOException ignorado) {
+            emissor.send(mensagemErro);
+        } catch (IOException e) {
+            System.err.println("Erro ao enviar mensagem de erro para o cliente: " + e.getMessage());
+        } finally {
+            emissor.completeWithError(excecaoOriginal);
         }
     }
+
 }
