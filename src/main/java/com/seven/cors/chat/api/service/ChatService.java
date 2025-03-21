@@ -4,6 +4,8 @@ import com.seven.cors.chat.api.model.ChatMessage;
 import com.seven.cors.chat.api.provider.IAProvider;
 import com.seven.cors.chat.api.repository.ChatMessageRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class ChatService {
 
+    @Qualifier("ollama")
     private final IAProvider iaProvider;
     private final ChatMessageRepository chatMessageRepository;
 
