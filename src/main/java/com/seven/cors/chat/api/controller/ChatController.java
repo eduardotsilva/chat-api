@@ -26,7 +26,7 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
-    @Operation(summary = "Mensagens pré-definidas", description = "Retorna uma lista fixa de mensagens de exemplo")
+    @Operation(summary = "Conversas salvas", description = "Retorna uma lista fixa de mensagens de exemplo")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Mensagens retornadas com sucesso"),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
@@ -36,7 +36,7 @@ public class ChatController {
         return Arrays.asList("Olá!", "Bem-vindo ao chat!", "Como posso ajudar?");
     }
 
-    @Operation(summary = "Enviar mensagem", description = "Envia uma mensagem ao assistente virtual e recebe a resposta")
+    @Operation(summary = "Conversa via mensagem", description = "Envia uma mensagem ao assistente virtual e recebe a resposta")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Mensagem processada com sucesso"),
         @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
