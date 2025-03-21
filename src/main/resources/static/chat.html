@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7Cors - Chat Bot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        header {
+            background-color: #4a6fa5;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        
+        .chat-container {
+            flex: 1;
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+        }
+        
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot-message {
+            background-color: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-form {
+            display: flex;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        #message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        #send-button {
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        
+        #send-button:hover {
+            background-color: #3a5a80;
+        }
+        
+        .typing-indicator {
+            display: none;
+            margin-bottom: 15px;
+        }
+        
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #90a4ae;
+            margin-right: 4px;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 100% {
+                transform: scale(0.6);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .bot-message pre {
+            overflow-x: auto;
+            background-color: #f7f7f7;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>7Cors - Chat Bot</h1>
+    </header>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Olá! Sou o assistente virtual 7Cors. Como posso ajudar você hoje?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="message bot-message" style="padding-bottom: 8px; padding-top: 8px;">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            </div>
+        </div>
+        
+        <form class="message-form" id="message-form">
+            <input type="text" id="message-input" placeholder="Digite sua mensagem..." autocomplete="off">
+            <button type="submit" id="send-button">Enviar</button>
+        </form>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variáveis essenciais
+            const messageForm = document.getElementById('message-form');
+            const messageInput = document.getElementById('message-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
+            
+            // Definir o apiBase
+            const apiBase = '/api/v1';
+            
+            // Rolar para o final das mensagens
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Adicionar mensagem do usuário
+            function addUserMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
+                messageDiv.textContent = message;
+                chatMessages.appendChild(messageDiv);
+                scrollToBottom();
+            }
+            
+            // Adicionar mensagem do bot
+            function addBotMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot-message';
+                
+                // Processar formatação de código (texto entre ````)
+                if (message.includes('```')) {
+                    let formattedMessage = '';
+                    const parts = message.split('```');
+                    
+                    for (let i = 0; i < parts.length; i++) {
+                        if (i % 2 === 0) {
+                            // Texto normal
+                            formattedMessage += parts[i];
+                        } else {
+                            // Código
+                            formattedMessage += `<pre>${parts[i]}</pre>`;
+                        }
+                    }
+                    
+                    messageDiv.innerHTML = formattedMessage;
+                } else {
+                    messageDiv.textContent = message;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                scrollToBottom();
+            }
+            
+            // Mostrar indicador de digitação
+            function showTypingIndicator() {
+                typingIndicator.style.display = 'block';
+                scrollToBottom();
+            }
+            
+            // Esconder indicador de digitação
+            function hideTypingIndicator() {
+                typingIndicator.style.display = 'none';
+            }
+            
+            // Conectar ao streaming da API usando Fetch API
+            function connectToStreamingFetch(message) {
+                showTypingIndicator();
+                
+                fetch(`${apiBase}/chat/stream`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
+                    body: message
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na conexão com o servidor');
+                    }
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    
+                    hideTypingIndicator();
+                    let responseMessage = '';
+                    
+                    // Criar a div de resposta uma vez só
+                    let responseDiv = document.createElement('div');
+                    responseDiv.className = 'message bot-message stream-response';
+                    responseDiv.textContent = ''; // Iniciar vazio
+                    chatMessages.appendChild(responseDiv);
+                    scrollToBottom();
+                    
+                    console.log("Iniciando processamento do stream");
+                    
+                    // Função para processar os chunks do stream
+                    function processStream({ done, value }) {
+                        if (done) {
+                            console.log("Stream finalizado");
+                            
+                            // Se não temos resposta até agora, adicione uma mensagem padrão
+                            if (!responseMessage.trim()) {
+                                console.log("Nenhuma resposta recebida no stream");
+                                responseMessage = "Não foi possível processar sua pergunta. Por favor, tente novamente.";
+                                responseDiv.textContent = responseMessage;
+                                scrollToBottom();
+                                return;
+                            }
+                            
+                            // Formatar o conteúdo final quando o streaming terminar
+                            if (responseMessage.includes('```')) {
+                                let formattedMessage = '';
+                                const parts = responseMessage.split('```');
+                                
+                                for (let i = 0; i < parts.length; i++) {
+                                    if (i % 2 === 0) {
+                                        // Texto normal
+                                        formattedMessage += parts[i];
+                                    } else {
+                                        // Código
+                                        formattedMessage += `<pre>${parts[i]}</pre>`;
+                                    }
+                                }
+                                
+                                responseDiv.innerHTML = formattedMessage;
+                            } else {
+                                responseDiv.textContent = responseMessage;
+                            }
+                            
+                            scrollToBottom();
+                            return;
+                        }
+                        
+                        // Decodificar e processar o chunk
+                        const chunk = decoder.decode(value, { stream: true });
+                        console.log("Chunk recebido:", chunk);
+                        
+                        // Se for o primeiro chunk a chegar, mostre logo
+                        if (responseMessage.length === 0 && chunk.trim()) {
+                            const initialContent = chunk.trim();
+                            if (initialContent.startsWith('data:')) {
+                                responseMessage = initialContent.substring(5).trim();
+                            } else {
+                                responseMessage = initialContent;
+                            }
+                            responseDiv.textContent = responseMessage;
+                            scrollToBottom();
+                        } else {
+                            // Para os próximos chunks, acumule diretamente
+                            responseMessage += chunk;
+                            responseDiv.textContent = responseMessage;
+                            scrollToBottom();
+                        }
+                        
+                        buffer += chunk;
+                        
+                        // Processar cada linha do buffer - comentado para depuração
+                        /*
+                        let lines = buffer.split('\n');
+                        buffer = lines.pop() || ''; // O último item pode estar incompleto
+                        
+                        let updated = false;
+                        
+                        for (const line of lines) {
+                            // Processar linha de dados do formato SSE
+                            if (line.startsWith('data:')) {
+                                const data = line.substring(5).trim();
+                                if (data) {
+                                    responseMessage += data;
+                                    updated = true;
+                                }
+                            } else if (line.trim() !== '') {
+                                // Se não é uma linha de dados SSE, mas não está em branco
+                                // Tratar como texto direto do stream
+                                responseMessage += line.trim() + ' ';
+                                updated = true;
+                            }
+                        }
+                        
+                        // Só atualize a UI se tiver havido mudanças
+                        if (updated) {
+                            // Atualizar o texto mostrado em tempo real
+                            responseDiv.textContent = responseMessage;
+                            scrollToBottom();
+                        }
+                        */
+                        
+                        // Continuar lendo
+                        return reader.read().then(processStream);
+                    }
+                    
+                    // Iniciar o processamento do stream
+                    return reader.read().then(processStream);
+                })
+                .catch(error => {
+                    hideTypingIndicator();
+                    console.error('Erro no streaming:', error);
+                    addBotMessage(`Desculpe, ocorreu um erro: ${error.message}`);
+                });
+            }
+            
+            // Enviar mensagem
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (!message) return;
+                
+                // Limpar o input
+                messageInput.value = '';
+                
+                // Adicionar mensagem do usuário
+                addUserMessage(message);
+                
+                // Conectar ao streaming
+                connectToStreamingFetch(message);
+            });
+            
+            // Focar no input
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html> 

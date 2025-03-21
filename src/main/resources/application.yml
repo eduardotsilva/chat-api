@@ -1,5 +1,3 @@
-
-
 server:
   servlet:
     encoding:
@@ -37,4 +35,4 @@ app:
 
 springdoc:
   swagger-ui:
-    path: /
+    path: /swagger-ui
