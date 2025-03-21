@@ -45,7 +45,8 @@ public class OllamaProvider implements IAProvider {
 
     @Override
     public ResponseBodyEmitter responderStreaming(String pergunta) {
-        ResponseBodyEmitter emissor = new ResponseBodyEmitter();
+        // Configurar o emissor com timeout mais longo (2 minutos = 120000ms)
+        ResponseBodyEmitter emissor = new ResponseBodyEmitter(120000L);
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         executor.execute(() -> {
@@ -54,6 +55,19 @@ public class OllamaProvider implements IAProvider {
                 HttpEntity<OllamaRequest> entidade = construirHttpEntity(requisicao);
                 RequestCallback callback = restTemplate.httpEntityCallback(entidade, String.class);
 
+                // Configurar temporizador para enviar pulsos keep-alive a cada 20 segundos
+                ExecutorService keepAliveExecutor = Executors.newSingleThreadExecutor();
+                keepAliveExecutor.execute(() -> {
+                    try {
+                        while (!Thread.currentThread().isInterrupted()) {
+                            Thread.sleep(20000); // 20 segundos
+                            emissor.send("", MediaType.TEXT_EVENT_STREAM); // Enviar pulso vazio como keep-alive
+                        }
+                    } catch (Exception e) {
+                        // Thread interrompida, ignorar
+                    }
+                });
+
                 restTemplate.execute(URL_OLLAMA, HttpMethod.POST, callback, resposta -> {
                     try (BufferedReader leitor = new BufferedReader(new InputStreamReader(resposta.getBody()))) {
                         String linha;
@@ -61,8 +75,10 @@ public class OllamaProvider implements IAProvider {
                             enviarFragmentoParaCliente(emissor, linha);
                         }
                         emissor.complete();
+                        keepAliveExecutor.shutdownNow(); // Interromper o keep-alive após terminar
                     } catch (Exception e) {
                         emissor.completeWithError(e);
+                        keepAliveExecutor.shutdownNow(); // Interromper o keep-alive em caso de erro
                     }
                     return null;
                 });

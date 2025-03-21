@@ -619,12 +619,17 @@
             function connectToStreamingFetch(message) {
                 showTypingIndicator();
                 
+                // Configuração do timeout da requisição
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutos de timeout
+                
                 fetch(`${apiBase}/chat/stream`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain'
                     },
-                    body: message
+                    body: message,
+                    signal: controller.signal
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -653,6 +658,9 @@
                     
                     // Função para processar os chunks do stream
                     function processStream({ done, value }) {
+                        // Limpar o timeout se recebemos dados
+                        clearTimeout(timeoutId);
+                        
                         if (done) {
                             console.log("Stream finalizado");
                             
@@ -706,9 +714,15 @@
                             return;
                         }
                         
+                        // Definir um novo timeout para cada chunk
+                        const chunkTimeoutId = setTimeout(() => controller.abort(), 60000); // 1 minuto
+                        
                         // Decodificar e processar o chunk
                         const chunk = decoder.decode(value, { stream: true });
                         console.log("Chunk recebido:", chunk);
+                        
+                        // Limpar o timeout do chunk já que recebemos dados
+                        clearTimeout(chunkTimeoutId);
                         
                         // Se for o primeiro chunk a chegar, mostre logo
                         if (responseMessage.length === 0 && chunk.trim()) {
@@ -748,8 +762,18 @@
                 })
                 .catch(error => {
                     hideTypingIndicator();
+                    clearTimeout(timeoutId);
                     console.error('Erro no streaming:', error);
-                    addBotMessage(`Desculpe, ocorreu um erro: ${error.message}`);
+                    
+                    // Verificar se o erro é de timeout ou abortado
+                    let errorMessage = "Desculpe, ocorreu um erro na comunicação com o servidor.";
+                    
+                    if (error.name === 'AbortError') {
+                        errorMessage = "A resposta demorou muito tempo. Pode ser que o servidor esteja sobrecarregado.";
+                    }
+                    
+                    // Adicionar a mensagem de erro
+                    addBotMessage(`${errorMessage} Tente novamente mais tarde.`);
                 });
             }
             

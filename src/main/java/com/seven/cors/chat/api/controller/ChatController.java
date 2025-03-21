@@ -14,9 +14,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("${app.api.base}/chat")
@@ -54,6 +56,7 @@ public class ChatController {
     })
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseBodyEmitter conversarStreaming(@RequestBody String mensagemUsuario) {
+        // Configurar um timeout mais longo (2 minutos)
         return chatService.processarStreaming(mensagemUsuario);
     }
 }

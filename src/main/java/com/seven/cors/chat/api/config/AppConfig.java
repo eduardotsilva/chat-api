@@ -3,6 +3,8 @@ package com.seven.cors.chat.api.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -14,8 +16,17 @@ import java.util.Collections;
 public class AppConfig {
 
     @Bean
+    public ClientHttpRequestFactory clientHttpRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        // Definir timeouts mais longos para requisições de streaming
+        factory.setConnectTimeout(30000); // 30 segundos para conexão
+        factory.setReadTimeout(180000);   // 3 minutos para leitura
+        return factory;
+    }
+
+    @Bean
     public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory());
 
         // Conversor para forçar UTF-8
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
