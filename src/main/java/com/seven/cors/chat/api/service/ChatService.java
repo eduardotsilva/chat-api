@@ -124,7 +124,7 @@ public class ChatService {
     private void enviarFragmentoParaCliente(ResponseBodyEmitter emissor, String linha) throws IOException {
         String fragmento = extrairFragmentoTexto(linha);
         if (!fragmento.isBlank()) {
-            emissor.send(fragmento + "");
+            emissor.send(fragmento);
         }
     }
 
