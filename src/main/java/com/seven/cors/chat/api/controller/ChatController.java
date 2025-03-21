@@ -38,6 +38,17 @@ public class ChatController {
         return Arrays.asList("Olá!", "Bem-vindo ao chat!", "Como posso ajudar?");
     }
 
+    @Operation(summary = "Histórico de conversas", description = "Retorna todas as conversas salvas no banco de dados")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso"),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+    })
+    @GetMapping("/historico")
+    public ResponseEntity<List<ChatMessage>> historicoConversas() {
+        List<ChatMessage> historico = chatService.obterHistoricoConversas();
+        return ResponseEntity.ok(historico);
+    }
+
     @Operation(summary = "Conversa via mensagem", description = "Envia uma mensagem ao assistente virtual e recebe a resposta")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Mensagem processada com sucesso"),

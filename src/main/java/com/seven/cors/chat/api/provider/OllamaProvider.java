@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -44,9 +45,12 @@ public class OllamaProvider implements IAProvider {
     }
 
     @Override
-    public ResponseBodyEmitter responderStreaming(String pergunta) {
+    public StreamingResponseWrapper responderStreaming(String pergunta) {
         // Configurar o emissor com timeout mais longo (2 minutos = 120000ms)
         ResponseBodyEmitter emissor = new ResponseBodyEmitter(120000L);
+        CompletableFuture<String> respostaCompletaFuture = new CompletableFuture<>();
+        StringBuilder respostaCompleta = new StringBuilder();
+        
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         executor.execute(() -> {
@@ -72,24 +76,31 @@ public class OllamaProvider implements IAProvider {
                     try (BufferedReader leitor = new BufferedReader(new InputStreamReader(resposta.getBody()))) {
                         String linha;
                         while ((linha = leitor.readLine()) != null) {
-                            enviarFragmentoParaCliente(emissor, linha);
+                            String fragmento = extrairFragmentoTexto(linha);
+                            if (!fragmento.isBlank()) {
+                                respostaCompleta.append(fragmento);
+                                enviarFragmentoParaCliente(emissor, fragmento);
+                            }
                         }
                         emissor.complete();
                         keepAliveExecutor.shutdownNow(); // Interromper o keep-alive após terminar
+                        respostaCompletaFuture.complete(respostaCompleta.toString());
                     } catch (Exception e) {
                         emissor.completeWithError(e);
                         keepAliveExecutor.shutdownNow(); // Interromper o keep-alive em caso de erro
+                        respostaCompletaFuture.completeExceptionally(e);
                     }
                     return null;
                 });
             } catch (Exception e) {
                 tratarErroStreaming(emissor, "Erro ao processar IA.", e);
+                respostaCompletaFuture.completeExceptionally(e);
             } finally {
                 executor.shutdown();
             }
         });
 
-        return emissor;
+        return new StreamingResponseWrapper(emissor, respostaCompletaFuture);
     }
 
     private HttpEntity<OllamaRequest> construirHttpEntity(OllamaRequest requisicao) {
@@ -120,11 +131,8 @@ public class OllamaProvider implements IAProvider {
         }
     }
 
-    private void enviarFragmentoParaCliente(ResponseBodyEmitter emissor, String linha) throws IOException {
-        String fragmento = extrairFragmentoTexto(linha);
-        if (!fragmento.isBlank()) {
-            emissor.send(fragmento);
-        }
+    private void enviarFragmentoParaCliente(ResponseBodyEmitter emissor, String fragmento) throws IOException {
+        emissor.send(fragmento);
     }
 
     private void tratarErroStreaming(ResponseBodyEmitter emissor, String mensagemErro, Exception excecaoOriginal) {
