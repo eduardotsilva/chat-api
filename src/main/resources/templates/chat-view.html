@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>7Cors - Chat Bot</title>
+</head>
+<body>
+    <h1>7Cors - Chat Bot</h1>
+    <p>API Base: <span th:text="${apiBase}">API Base</span></p>
+    
+    <div>
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+    
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiBase = /*[[${apiBase}]]*/ '/api/v1';
+            console.log('API Base:', apiBase);
+        });
+    </script>
+</body>
+</html> 

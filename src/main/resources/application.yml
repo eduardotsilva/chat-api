@@ -1,0 +1,45 @@
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  # Configuração de timeout aumentada para requisições assíncronas
+  async:
+    request-timeout: 120000  # 2 minutos em milissegundos
+
+spring:
+  application:
+    name: chat-api
+
+  datasource:
+    url: jdbc:h2:tcp://localhost:1521/mem:7corsdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate: 
+      ddl-auto: update
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  mvc:
+    async:
+      request-timeout: 120000  # 2 minutos em milissegundos
+
+app:
+  api:
+    version: v1
+    base: /api/${app.api.version}
+  swagger:
+    title: 7cors-chat-api
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
