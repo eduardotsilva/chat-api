@@ -1,25 +1,76 @@
-# Compiled class file
-*.class
+# ==========================
+# 🚀 IntelliJ IDEA
+# ==========================
+.idea/
+*.iml
+*.ipr
+*.iws
 
-# Log file
+# ==========================
+# 📦 Build e Dependências
+# ==========================
+target/
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# ==========================
+# 🛠️ Maven
+# ==========================
+log/
 *.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+!spring.log # Se precisar incluir um log específico
 *.jar
 *.war
-*.nar
 *.ear
 *.zip
 *.tar.gz
 *.rar
+*.class
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# ==========================
+# 🏗️ Arquivos temporários de compilação
+# ==========================
 hs_err_pid*
 replay_pid*
-.factorypath
+dump*
+
+# ==========================
+# 🔒 Arquivos Sensíveis
+# ==========================
+.env
+*.key
+*.pem
+*.p12
+*.crt
+*.cert
+application.properties
+application.yml
+application-dev.properties
+application-prod.properties
+secrets.json
+db-config.json
+
+# ==========================
+# 💻 SO (Windows, macOS, Linux)
+# ==========================
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+*.bak
+
+# ==========================
+# 📱 IDEs e Configurações Extras
+# ==========================
+.vscode/
+*.log
+*.tmp
+*.~lock*
+*.sublime-workspace
+*.sublime-project
