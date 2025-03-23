@@ -33,6 +33,29 @@ spring:
     async:
       request-timeout: 120000  # 2 minutos em milissegundos
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 547359057676-m82qsqs7bt2pdcg6smbdhd1rbv6ib4g2.apps.googleusercontent.com
+            client-secret: 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
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - email
+              - profile
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: email
+
+# JWT configuração
+jwt:
+  secret: ${JWT_SECRET:chave-secreta-para-jwt-deve-ser-longa-e-segura-em-ambiente-de-producao}
+  expiration: 86400000 # 24 horas em milissegundos
+
 app:
   api:
     version: v1
@@ -43,3 +66,15 @@ app:
 springdoc:
   swagger-ui:
     path: /swagger-ui
+
+# Configuração de logging
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web: INFO
+    com.seven.cors.chat.api: DEBUG
+    com.seven.cors.chat.api.config: DEBUG
+    com.seven.cors.chat.api.service.UsuarioService: DEBUG
+    com.seven.cors.chat.api.controller.AuthController: DEBUG

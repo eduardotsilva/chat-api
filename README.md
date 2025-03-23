@@ -1,118 +1,186 @@
-# Chat-API com Integração de PDFs e Streaming
+# 7Cors Chat API
 
-Um assistente virtual com capacidade de analisar documentos PDF e responder perguntas com base em seu conteúdo, utilizando o modelo Mistral do Ollama para geração de respostas em streaming.
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.3-brightgreen.svg)
+![Java](https://img.shields.io/badge/Java-17-orange.svg)
+![Ollama](https://img.shields.io/badge/Ollama-latest-blue.svg)
+![JWT](https://img.shields.io/badge/JWT-Auth-yellow.svg)
+![OAuth2](https://img.shields.io/badge/OAuth2-Google-red.svg)
 
-![7Cors Chat API](https://img.shields.io/badge/7Cors-Chat%20API-blue)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.3-green)
-![Java](https://img.shields.io/badge/Java-17-orange)
-![Ollama](https://img.shields.io/badge/Ollama-Mistral-purple)
+API para chat com inteligência artificial que utiliza streaming para respostas em tempo real. Integra-se com o Ollama usando o modelo Mistral para processamento das solicitações. Inclui suporte para análise de PDFs e autenticação social via Google.
 
-## 📋 Funcionalidades
+## Arquitetura
 
-- **Chat com IA**: Conversa em tempo real com o assistente usando Mistral via Ollama
-- **Streaming de Respostas**: Visualização da resposta sendo gerada em tempo real
-- **Upload e Análise de PDFs**: Faça upload de documentos PDF para consultar seu conteúdo
-- **Chat Contextualizado**: Faça perguntas específicas sobre o conteúdo dos PDFs
-- **Histórico de Conversas**: Acesse todas as conversas anteriores
-- **Interface Moderna**: Design responsivo com suporte a tema escuro
-- **Persistência em Banco de Dados**: Armazenamento de mensagens e documentos
+O projeto utiliza as seguintes tecnologias:
 
-## 🏗️ Arquitetura
+- **Spring Boot 3.4.3**: Framework Java para desenvolvimento da API
+- **H2 Database**: Banco de dados em memória para armazenamento
+- **Ollama**: Servidor local para execução de modelos de IA
+- **Mistral**: Modelo de IA para processamento de linguagem natural
+- **OAuth2/JWT**: Autenticação social com Google e tokens JWT
+- **Thymeleaf**: Motor de templates para páginas HTML (opcional)
 
-O projeto é construído usando:
+A arquitetura segue o padrão MVC (Model-View-Controller), com separação clara de responsabilidades.
 
-- **Spring Boot**: Framework backend para APIs REST
-- **H2 Database**: Banco de dados em memória
-- **Apache PDFBox**: Para extração de texto de documentos PDF
-- **Ollama**: Para acesso ao modelo Mistral de IA
-- **JavaScript Vanilla**: Frontend simples e eficiente sem frameworks pesados
-- **Streaming SSE**: Server-sent events para streaming de respostas em tempo real
+## Pré-requisitos
 
-## 🔧 Pré-requisitos
+- Java 17 ou superior
+- Ollama instalado e configurado com o modelo Mistral
+- Maven (ou use o wrapper incluído)
+- Porta 8080 disponível
+- Credenciais OAuth2 do Google (para login social)
 
-1. Java 17 ou superior
-2. [Ollama](https://ollama.com/) instalado e configurado com o modelo Mistral
-3. Maven ou Wrapper (incluído no projeto)
-4. Porta 8080 disponível para o servidor web
+## Instalação
 
-## 🚀 Como Executar
+### 1. Ollama e Mistral
 
-### Instalando o Ollama e o modelo Mistral
-
-1. Instale o Ollama seguindo as instruções em [ollama.com](https://ollama.com/)
-2. Baixe o modelo Mistral com o comando:
+1. Instale o Ollama seguindo as instruções em [https://ollama.ai/](https://ollama.ai/)
+2. Baixe e inicie o modelo Mistral:
    ```bash
    ollama pull mistral
    ```
-3. Inicie o servidor Ollama:
+3. Verifique se o Ollama está rodando na porta padrão (11434)
+
+### 2. Configuração do OAuth2 (Google)
+
+1. Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+2. Crie um novo projeto
+3. Configure a tela de consentimento OAuth
+4. Crie credenciais OAuth 2.0
+5. Adicione as seguintes URIs de redirecionamento autorizados:
+   - `http://localhost:8080/login/oauth2/code/google`
+   - `http://localhost:8080/auth/oauth2/code/google`
+   - `http://localhost:8080/oauth2/success`
+6. Anote o Client ID e Client Secret
+7. Faça download do arquivo JSON das credenciais
+
+### 3. Configuração da aplicação
+
+1. Clone o repositório:
    ```bash
-   ollama serve
+   git clone [URL_DO_REPOSITORIO]
+   cd chat-api
    ```
 
-### Executando a aplicação
+2. Configure as credenciais do Google no `application.yml` ou use variáveis de ambiente:
+   ```yaml
+   spring:
+     security:
+       oauth2:
+         client:
+           registration:
+             google:
+               client-id: seu-client-id-aqui
+               client-secret: seu-client-secret-aqui
+   ```
 
-#### Opção 1: Usando Maven
+3. Configure o JWT secret (recomendado usar variável de ambiente em produção):
+   ```yaml
+   jwt:
+     secret: ${JWT_SECRET:chave-secreta-para-jwt-deve-ser-longa-e-segura-em-ambiente-de-producao}
+   ```
+
+### 4. Execução
+
+Você pode iniciar a aplicação de várias formas:
+
+#### Usando Maven:
 ```bash
-mvn clean spring-boot:run
+mvn spring-boot:run
 ```
 
-#### Opção 2: Usando o Maven Wrapper (Windows)
+#### Usando o Wrapper:
 ```bash
-.\mvnw.cmd clean spring-boot:run
+./mvnw spring-boot:run  # Linux/Mac
+mvnw.cmd spring-boot:run  # Windows
 ```
 
-#### Opção 3: Usando o Maven Wrapper (Linux/Mac)
+#### Como jar executável:
 ```bash
-./mvnw clean spring-boot:run
+mvn clean package
+java -jar target/chat-api-0.0.1-SNAPSHOT.jar
 ```
 
-O servidor estará disponível em: http://localhost:8080
+## Uso
 
-## 📱 Usando o Sistema
+Acesse `http://localhost:8080` no navegador. Você será redirecionado para a página de login.
 
-1. **Acesse a interface**: Abra http://localhost:8080 no seu navegador
-2. **Chat normal**: Digite mensagens e receba respostas do assistente
-3. **Upload de PDF**:
-   - Clique no ícone de PDF no canto superior direito
-   - Faça upload de um documento PDF
-   - Selecione o documento na lista
-4. **Consulte o PDF**: Com o PDF selecionado, faça perguntas específicas sobre seu conteúdo
-5. **Histórico**: Veja conversas anteriores clicando no ícone de histórico
+### Autenticação Social
 
-## 📚 API Endpoints
+1. Clique no botão "Entrar com Google"
+2. Faça login com sua conta Google
+3. Conceda as permissões solicitadas
+4. Você será redirecionado para o chat após autenticação bem-sucedida
+
+### Chat Normal
+
+1. Digite uma mensagem na área de entrada no final da tela
+2. Clique no botão enviar ou pressione Enter
+3. A resposta será mostrada em tempo real com streaming
+
+### Upload e Consulta de PDFs
+
+1. Clique no botão de documentos no menu lateral
+2. Faça upload de um PDF
+3. Selecione o PDF para ativá-lo como contexto
+4. Faça perguntas sobre o conteúdo do PDF 
+
+### Histórico
+
+Clique no botão de histórico para ver suas conversas anteriores.
+
+## API Endpoints
+
+### Autenticação
+
+- `GET /auth/login` - Redireciona para login OAuth2 do Google
+- `GET /auth/oauth2/success` - Endpoint de callback após login bem-sucedido
+- `GET /auth/usuario` - Obtém informações do usuário logado
+- `GET /auth/token/validar` - Verifica se o token JWT é válido
+- `POST /auth/logout` - Realiza logout
 
 ### Chat
-- `POST /api/v1/chat`: Envia uma mensagem e recebe resposta síncrona
-- `POST /api/v1/chat/stream`: Envia uma mensagem e recebe resposta em streaming
-- `GET /api/v1/chat/historico`: Obtém o histórico de conversas
+
+- `GET /api/v1/chat/mensagens` - Lista mensagens de exemplo
+- `GET /api/v1/chat/historico` - Obtém histórico de conversas
+- `POST /api/v1/chat` - Envia uma mensagem e recebe resposta
+- `POST /api/v1/chat/stream` - Envia uma mensagem e recebe resposta em streaming
 
 ### Documentos PDF
-- `POST /api/v1/documentos`: Faz upload de um documento PDF
-- `GET /api/v1/documentos`: Lista todos os documentos disponíveis
-- `GET /api/v1/documentos/{id}`: Obtém detalhes de um documento específico
-- `GET /api/v1/documentos/{id}/download`: Baixa o arquivo PDF original
-- `DELETE /api/v1/documentos/{id}`: Remove um documento
 
-## 🔒 Limitações
+- `POST /api/v1/documentos` - Faz upload de um documento PDF
+- `GET /api/v1/documentos` - Lista documentos disponíveis
+- `GET /api/v1/documentos/{id}` - Obtém metadados de um documento
+- `GET /api/v1/documentos/{id}/download` - Baixa o documento PDF
+- `DELETE /api/v1/documentos/{id}` - Remove um documento
 
-- O texto extraído dos PDFs é limitado a 10.000 caracteres para evitar exceder o limite de tokens do modelo
-- Documentos com imagens ou formatos complexos podem ter extração de texto limitada
-- O servidor Ollama deve estar rodando localmente na porta 11434
+## Limitações
 
-## 🛠️ Configurações Avançadas
+- Processamento de PDFs limitado a 10.000 caracteres para evitar exceder limites de tokens
+- Documentos com tabelas, imagens ou formatos complexos podem não ser processados corretamente
+- O Ollama deve estar disponível na porta 11434
+- Tokens JWT têm validade de 24 horas
 
-As configurações podem ser ajustadas no arquivo `application.yml`:
+## Configurações Avançadas
 
-- Timeouts de streaming
-- Conexões com banco de dados
-- Configurações de CORS
-- Mapeamentos de API
+Você pode ajustar diversos parâmetros no arquivo `application.yml`:
 
-## 📜 Licença
+- Timeouts de conexão e leitura
+- Expiração do token JWT
+- Limites de upload de arquivos
+- Configurações do banco de dados
 
-Este projeto é licenciado sob os termos da Licença MIT.
+## Resolução de Problemas
+
+### Problemas de Autenticação OAuth2
+
+Se você encontrar problemas com a autenticação OAuth2:
+
+1. Verifique se as URIs de redirecionamento no Google Cloud Console correspondem exatamente às configuradas na aplicação
+2. Certifique-se de que a tela de consentimento OAuth está configurada corretamente
+3. Verifique se o client ID e client secret estão corretos no `application.yml`
+4. Analise os logs da aplicação para mensagens de erro específicas
 
 ---
 
-Desenvolvido por 7Cors
+Desenvolvido por 7Cors &copy; 2025
 

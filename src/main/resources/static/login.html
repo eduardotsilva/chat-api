@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7Cors - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #f3f4f6;
+            --text-color: #333;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f9f7ff 0%, #e2f0fe 100%);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            width: 90%;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            padding-bottom: 2rem;
+        }
+        
+        .login-header {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .login-logo-icon {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-right: 1rem;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .login-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        
+        .login-form {
+            padding: 0 2rem;
+            text-align: center;
+        }
+        
+        .login-message {
+            margin-bottom: 2rem;
+            font-size: 16px;
+            color: #4b5563;
+        }
+        
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .google-login {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            font-size: 16px;
+            font-weight: 500;
+            color: #4b5563;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+        
+        .google-login:hover {
+            background-color: #f9fafb;
+            border-color: #c3c9d5;
+        }
+        
+        .google-icon {
+            margin-right: 1rem;
+            font-size: 20px;
+            color: #DB4437;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .error-message {
+            background-color: #fee2e2;
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spinner 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Dark theme */
+        body.dark-theme {
+            background: linear-gradient(135deg, #1a1a2e 0%, #121629 100%);
+            color: #e5e7eb;
+        }
+        
+        body.dark-theme .login-container {
+            background-color: #1f2937;
+        }
+        
+        body.dark-theme .login-message {
+            color: #9ca3af;
+        }
+        
+        body.dark-theme .google-login {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #e5e7eb;
+        }
+        
+        body.dark-theme .google-login:hover {
+            background-color: #4b5563;
+        }
+        
+        body.dark-theme .login-footer {
+            color: #9ca3af;
+        }
+        
+        body.dark-theme .error-message {
+            background-color: #7f1d1d;
+            color: #fca5a5;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 480px) {
+            .login-container {
+                width: 95%;
+            }
+            
+            .login-header {
+                padding: 1.5rem;
+            }
+            
+            .login-form {
+                padding: 0 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <div class="login-logo-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h1 class="login-title">7Cors Chat</h1>
+            </div>
+            <div class="login-subtitle">Faça login para acessar o chat</div>
+        </div>
+        
+        <div class="login-form">
+            <div id="error-message" class="error-message">
+                Erro durante a autenticação. Por favor, tente novamente.
+            </div>
+            
+            <div class="login-message">
+                Entre com sua conta para acessar todas as funcionalidades do chat.
+            </div>
+            
+            <div class="social-login">
+                <a href="/auth/login" class="google-login">
+                    <i class="fab fa-google google-icon"></i>
+                    Entrar com Google
+                </a>
+            </div>
+            
+            <div id="loading" class="loading-indicator">
+                <div class="loading-spinner"></div>
+                <span>Processando...</span>
+            </div>
+            
+            <div class="login-footer">
+                Desenvolvido por 7Cors &copy; 2025
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar se há erro de autenticação na URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            
+            if (error) {
+                const errorMessage = document.getElementById('error-message');
+                errorMessage.style.display = 'block';
+                
+                // Mensagens de erro específicas com base no código
+                switch(error) {
+                    case 'authentication_failed':
+                        errorMessage.textContent = 'Falha na autenticação. Por favor, tente novamente.';
+                        break;
+                    case 'email_not_found':
+                        errorMessage.textContent = 'Email não encontrado na sua conta Google.';
+                        break;
+                    case 'invalid_authentication_type':
+                        errorMessage.textContent = 'Tipo de autenticação inválido. Contate o administrador.';
+                        break;
+                    case 'authentication_processing_error':
+                        errorMessage.textContent = 'Erro ao processar autenticação. Tente novamente.';
+                        break;
+                    case 'unknown_principal_type':
+                        errorMessage.textContent = 'Tipo de autenticação não reconhecido. Contate o administrador.';
+                        break;
+                    default:
+                        errorMessage.textContent = `Erro não especificado durante a autenticação: ${error}. Por favor, tente novamente.`;
+                }
+                
+                console.error('Erro de autenticação:', error);
+            }
+            
+            // Verificar se o usuário já está autenticado
+            checkAuthentication();
+            
+            // Mostrar spinner ao clicar no botão de login
+            const googleLoginButton = document.querySelector('.google-login');
+            googleLoginButton.addEventListener('click', function() {
+                const loading = document.getElementById('loading');
+                loading.style.display = 'flex';
+            });
+            
+            // Carregar tema do localStorage
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        });
+        
+        // Função para verificar autenticação
+        function checkAuthentication() {
+            // Verificar se há um token JWT válido
+            fetch('/auth/token/validar')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Verificação de autenticação:', data);
+                    if (data.valid) {
+                        // Redirecionar para o chat se já estiver autenticado
+                        window.location.href = '/chat.html';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar autenticação:', error);
+                });
+        }
+    </script>
+</body>
+</html> 

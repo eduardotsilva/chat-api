@@ -639,6 +639,86 @@
             border-color: #4b5563;
             border-top-color: #3b82f6;
         }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 8px;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar-placeholder {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+        
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .profile-dropdown {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 8px 0;
+            min-width: 180px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .profile-dropdown.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .logout-button {
+            color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -651,12 +731,32 @@
                 <h1>7Cors Chat</h1>
             </div>
             <div class="header-actions">
-                <button id="history-button" class="history-button" aria-label="Ver histórico">
+                <button id="history-button" class="history-button" title="Histórico">
                     <i class="fas fa-history"></i>
                 </button>
-                <button id="theme-toggle" class="theme-switch" aria-label="Alternar tema">
+                <button id="theme-toggle" class="theme-switch" title="Alternar tema">
                     <i class="fas fa-moon"></i>
                 </button>
+                <div id="user-profile" class="user-profile">
+                    <div class="user-avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="user-name">Usuário</span>
+                    <div id="profile-dropdown" class="profile-dropdown">
+                        <div class="dropdown-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>Meu Perfil</span>
+                        </div>
+                        <div class="dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Configurações</span>
+                        </div>
+                        <div id="logout-button" class="dropdown-item logout-button">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Sair</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -723,6 +823,12 @@
             const typingIndicator = document.getElementById('typing-indicator');
             const themeToggle = document.getElementById('theme-toggle');
             const themeIcon = themeToggle.querySelector('i');
+            const userProfile = document.getElementById('user-profile');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const logoutButton = document.getElementById('logout-button');
+            
+            // Verificar a autenticação do usuário
+            verificarAutenticacao();
             
             // Configuração do tema
             function setTheme(isDark) {
@@ -750,6 +856,134 @@
                 const isDarkTheme = document.body.classList.contains('dark-theme');
                 setTheme(!isDarkTheme);
             });
+            
+            // Verificar a autenticação do usuário
+            function verificarAutenticacao() {
+                fetch('/auth/token/validar')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Verificação de autenticação:', data);
+                        if (!data.valid) {
+                            console.log('Usuário não autenticado, redirecionando para login');
+                            window.location.href = '/login.html';
+                        } else {
+                            console.log('Usuário autenticado');
+                            carregarInformacoesUsuario();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao verificar autenticação:', error);
+                        window.location.href = '/login.html';
+                    });
+            }
+            
+            // Carregar informações do usuário autenticado
+            function carregarInformacoesUsuario() {
+                fetch('/auth/usuario')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Não foi possível carregar informações do usuário');
+                        }
+                        return response.json();
+                    })
+                    .then(user => {
+                        updateUserProfileUI(user);
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar usuário:', error);
+                    });
+            }
+            
+            // Atualizar UI com informações do usuário
+            function updateUserProfileUI(user) {
+                if (user.fotoUrl) {
+                    userProfile.innerHTML = `
+                        <div class="user-avatar">
+                            <img src="${user.fotoUrl}" alt="${user.nome}">
+                        </div>
+                        <span class="user-name">${user.nome}</span>
+                        <div id="profile-dropdown" class="profile-dropdown">
+                            <div class="dropdown-item">
+                                <i class="fas fa-user-circle"></i>
+                                <span>Meu Perfil</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <i class="fas fa-cog"></i>
+                                <span>Configurações</span>
+                            </div>
+                            <div id="logout-button" class="dropdown-item logout-button">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Sair</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Usar iniciais se não houver foto
+                    const iniciais = (user.nome ? user.nome.charAt(0) : '') + 
+                                    (user.sobrenome ? user.sobrenome.charAt(0) : '');
+                    
+                    userProfile.innerHTML = `
+                        <div class="user-avatar-placeholder">
+                            ${iniciais.toUpperCase()}
+                        </div>
+                        <span class="user-name">${user.nome}</span>
+                        <div id="profile-dropdown" class="profile-dropdown">
+                            <div class="dropdown-item">
+                                <i class="fas fa-user-circle"></i>
+                                <span>Meu Perfil</span>
+                            </div>
+                            <div class="dropdown-item">
+                                <i class="fas fa-cog"></i>
+                                <span>Configurações</span>
+                            </div>
+                            <div id="logout-button" class="dropdown-item logout-button">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Sair</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Re-obter referências após atualizar o HTML
+                const updatedUserProfile = document.getElementById('user-profile');
+                const updatedProfileDropdown = document.getElementById('profile-dropdown');
+                const updatedLogoutButton = document.getElementById('logout-button');
+                
+                // Configurar dropdown
+                if (updatedUserProfile) {
+                    updatedUserProfile.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        updatedProfileDropdown.classList.toggle('show');
+                    });
+                    
+                    // Fechar dropdown ao clicar fora
+                    document.addEventListener('click', function(e) {
+                        if (!updatedUserProfile.contains(e.target)) {
+                            updatedProfileDropdown.classList.remove('show');
+                        }
+                    });
+                }
+                
+                // Configurar logout
+                if (updatedLogoutButton) {
+                    updatedLogoutButton.addEventListener('click', function() {
+                        logout();
+                    });
+                }
+            }
+            
+            // Função de logout
+            function logout() {
+                fetch('/auth/logout', {
+                    method: 'POST'
+                })
+                .then(() => {
+                    window.location.href = '/login.html';
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                });
+            }
             
             // Controles do histórico
             const historyButton = document.getElementById('history-button');
@@ -912,7 +1146,19 @@
                 typingIndicator.style.display = 'none';
             }
             
-            // Conectar ao streaming da API usando Fetch API
+            // Função para gerar UUID v4
+            function uuidv4() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
+            // Gerar um ID de sessão ao iniciar o chat
+            const sessionId = uuidv4();
+            
+            // Modifique a função connectToStreamingFetch para incluir o sessionId nos cabeçalhos
             function connectToStreamingFetch(message) {
                 showTypingIndicator();
                 
@@ -923,7 +1169,8 @@
                 fetch(`${apiBase}/chat/stream`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'text/plain'
+                        'Content-Type': 'text/plain',
+                        'X-Session-ID': sessionId
                     },
                     body: message,
                     signal: controller.signal
