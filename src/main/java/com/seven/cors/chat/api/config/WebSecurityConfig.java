@@ -47,6 +47,11 @@ public class WebSecurityConfig {
                     new AntPathRequestMatcher("/oauth2/**"),
                     new AntPathRequestMatcher("/login/oauth2/code/**"),
                     
+                    // Endpoints de vídeo
+                    new AntPathRequestMatcher("/api/v1/video/player"),
+                    new AntPathRequestMatcher("/api/v1/video/listar"),
+                    new AntPathRequestMatcher("/api/v1/video/stream/**"),
+                    
                     // Todos os recursos estáticos
                     new AntPathRequestMatcher("/css/**"),
                     new AntPathRequestMatcher("/js/**"),

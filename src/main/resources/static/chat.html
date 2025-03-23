@@ -52,7 +52,40 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 16px;
+        }
+        
+        .history-button, .theme-switch, .video-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+        
+        .history-button:hover, .theme-switch:hover, .video-button:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+        
+        body.dark-theme .history-button, 
+        body.dark-theme .theme-switch,
+        body.dark-theme .video-button {
+            color: #e2e8f0;
+        }
+        
+        body.dark-theme .history-button:hover,
+        body.dark-theme .theme-switch:hover,
+        body.dark-theme .video-button:hover {
+            background-color: #334155;
+            color: #e2e8f0;
         }
         
         .logo {
@@ -71,6 +104,12 @@
             justify-content: center;
             color: white;
             font-size: 20px;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary-color);
         }
         
         h1 {
@@ -728,19 +767,20 @@
                 <div class="logo-icon">
                     <i class="fas fa-robot"></i>
                 </div>
-                <h1>7Cors Chat</h1>
+                <span class="logo-text">7Cors Chat</span>
             </div>
             <div class="header-actions">
-                <button id="history-button" class="history-button" title="Histórico">
+                <button id="history-button" class="history-button" title="Histórico de conversas">
                     <i class="fas fa-history"></i>
                 </button>
-                <button id="theme-toggle" class="theme-switch" title="Alternar tema">
+                <a href="/api/v1/video/player" class="video-button" title="Player de Vídeo">
+                    <i class="fas fa-film"></i>
+                </a>
+                <button id="theme-toggle" class="theme-switch" title="Alterar tema">
                     <i class="fas fa-moon"></i>
                 </button>
                 <div id="user-profile" class="user-profile">
-                    <div class="user-avatar-placeholder">
-                        <i class="fas fa-user"></i>
-                    </div>
+                    <div class="user-avatar-placeholder">?</div>
                     <span class="user-name">Usuário</span>
                     <div id="profile-dropdown" class="profile-dropdown">
                         <div class="dropdown-item">
@@ -918,15 +958,12 @@
                         </div>
                     `;
                 } else {
-                    // Usar iniciais se não houver foto
-                    const iniciais = (user.nome ? user.nome.charAt(0) : '') + 
-                                    (user.sobrenome ? user.sobrenome.charAt(0) : '');
-                    
+                    const iniciais = user.nome ? user.nome.charAt(0).toUpperCase() : '?';
                     userProfile.innerHTML = `
                         <div class="user-avatar-placeholder">
-                            ${iniciais.toUpperCase()}
+                            ${iniciais}
                         </div>
-                        <span class="user-name">${user.nome}</span>
+                        <span class="user-name">${user.nome || 'Usuário'}</span>
                         <div id="profile-dropdown" class="profile-dropdown">
                             <div class="dropdown-item">
                                 <i class="fas fa-user-circle"></i>
@@ -944,411 +981,39 @@
                     `;
                 }
                 
-                // Re-obter referências após atualizar o HTML
-                const updatedUserProfile = document.getElementById('user-profile');
-                const updatedProfileDropdown = document.getElementById('profile-dropdown');
-                const updatedLogoutButton = document.getElementById('logout-button');
-                
-                // Configurar dropdown
-                if (updatedUserProfile) {
-                    updatedUserProfile.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        updatedProfileDropdown.classList.toggle('show');
-                    });
-                    
-                    // Fechar dropdown ao clicar fora
-                    document.addEventListener('click', function(e) {
-                        if (!updatedUserProfile.contains(e.target)) {
-                            updatedProfileDropdown.classList.remove('show');
-                        }
-                    });
-                }
-                
-                // Configurar logout
-                if (updatedLogoutButton) {
-                    updatedLogoutButton.addEventListener('click', function() {
-                        logout();
-                    });
-                }
-            }
-            
-            // Função de logout
-            function logout() {
-                fetch('/auth/logout', {
-                    method: 'POST'
-                })
-                .then(() => {
-                    window.location.href = '/login.html';
-                })
-                .catch(error => {
-                    console.error('Erro ao fazer logout:', error);
+                // Toggle dropdown quando clica no perfil
+                userProfile.addEventListener('click', function() {
+                    const dropdown = this.querySelector('.profile-dropdown');
+                    dropdown.classList.toggle('show');
                 });
-            }
-            
-            // Controles do histórico
-            const historyButton = document.getElementById('history-button');
-            const historyPanel = document.getElementById('history-panel');
-            const closeHistory = document.getElementById('close-history');
-            const historyContent = document.getElementById('history-content');
-            
-            // Abrir painel de histórico
-            historyButton.addEventListener('click', function() {
-                historyPanel.classList.add('open');
-                carregarHistorico();
-            });
-            
-            // Fechar painel de histórico
-            closeHistory.addEventListener('click', function() {
-                historyPanel.classList.remove('open');
-            });
-            
-            // Função para carregar o histórico de conversas
-            function carregarHistorico() {
-                historyContent.innerHTML = `
-                    <div class="history-loader">
-                        <div class="history-spinner"></div>
-                    </div>
-                `;
                 
-                fetch(`${apiBase}/chat/historico`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erro ao carregar histórico');
+                // Fechar dropdown quando clica fora
+                document.addEventListener('click', function(event) {
+                    if (!userProfile.contains(event.target)) {
+                        const dropdown = userProfile.querySelector('.profile-dropdown');
+                        if (dropdown.classList.contains('show')) {
+                            dropdown.classList.remove('show');
                         }
-                        return response.json();
+                    }
+                });
+                
+                // Logout quando clica no botão
+                document.getElementById('logout-button').addEventListener('click', function() {
+                    fetch('/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
                     })
-                    .then(data => {
-                        if (data.length === 0) {
-                            historyContent.innerHTML = `
-                                <div class="history-empty">
-                                    Nenhuma conversa encontrada.
-                                </div>
-                            `;
-                            return;
-                        }
-                        
-                        // Ordenar conversas pela data (mais recentes primeiro)
-                        data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                        
-                        let historyHTML = '';
-                        data.forEach(item => {
-                            const date = new Date(item.timestamp);
-                            const formattedDate = date.toLocaleDateString('pt-BR', { 
-                                day: '2-digit', 
-                                month: '2-digit', 
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                            
-                            historyHTML += `
-                                <div class="history-item" data-id="${item.id}">
-                                    <div class="history-date">${formattedDate}</div>
-                                    <div class="history-user-message">${item.userMessage}</div>
-                                    <div class="history-bot-message">${item.botResponse.substring(0, 80)}${item.botResponse.length > 80 ? '...' : ''}</div>
-                                </div>
-                            `;
-                        });
-                        
-                        historyContent.innerHTML = historyHTML;
-                        
-                        // Adicionar eventos de clique para cada item do histórico
-                        document.querySelectorAll('.history-item').forEach(item => {
-                            item.addEventListener('click', function() {
-                                const userMessage = this.querySelector('.history-user-message').textContent;
-                                const botResponse = data.find(msg => msg.id === this.dataset.id).botResponse;
-                                
-                                // Adicionar mensagens ao chat
-                                addUserMessage(userMessage);
-                                addBotMessage(botResponse);
-                                
-                                // Fechar painel de histórico
-                                historyPanel.classList.remove('open');
-                            });
-                        });
+                    .then(() => {
+                        window.location.href = '/login.html';
                     })
                     .catch(error => {
-                        console.error('Erro:', error);
-                        historyContent.innerHTML = `
-                            <div class="history-empty">
-                                Erro ao carregar histórico. Tente novamente.
-                            </div>
-                        `;
+                        console.error('Erro ao fazer logout:', error);
                     });
-            }
-            
-            // Definir o apiBase
-            const apiBase = '/api/v1';
-            
-            // Rolar para o final das mensagens
-            function scrollToBottom() {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-            
-            // Adicionar mensagem do usuário
-            function addUserMessage(message) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message user-message';
-                messageDiv.innerHTML = `
-                    <div class="message-avatar user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    ${message}
-                `;
-                chatMessages.appendChild(messageDiv);
-                scrollToBottom();
-            }
-            
-            // Adicionar mensagem do bot
-            function addBotMessage(message) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message bot-message';
-                
-                let formattedContent = `
-                    <div class="message-avatar">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                `;
-                
-                // Processar formatação de código (texto entre ````)
-                if (message.includes('```')) {
-                    let formattedMessage = '';
-                    const parts = message.split('```');
-                    
-                    for (let i = 0; i < parts.length; i++) {
-                        if (i % 2 === 0) {
-                            // Texto normal
-                            formattedMessage += parts[i];
-                        } else {
-                            // Código
-                            formattedMessage += `<pre>${parts[i]}</pre>`;
-                        }
-                    }
-                    
-                    formattedContent += formattedMessage;
-                } else {
-                    formattedContent += message;
-                }
-                
-                messageDiv.innerHTML = formattedContent;
-                chatMessages.appendChild(messageDiv);
-                scrollToBottom();
-            }
-            
-            // Mostrar indicador de digitação
-            function showTypingIndicator() {
-                typingIndicator.style.display = 'block';
-                scrollToBottom();
-            }
-            
-            // Esconder indicador de digitação
-            function hideTypingIndicator() {
-                typingIndicator.style.display = 'none';
-            }
-            
-            // Função para gerar UUID v4
-            function uuidv4() {
-                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    const r = Math.random() * 16 | 0;
-                    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-                    return v.toString(16);
                 });
             }
             
-            // Gerar um ID de sessão ao iniciar o chat
-            const sessionId = uuidv4();
-            
-            // Modifique a função connectToStreamingFetch para incluir o sessionId nos cabeçalhos
-            function connectToStreamingFetch(message) {
-                showTypingIndicator();
-                
-                // Configuração do timeout da requisição
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutos de timeout
-                
-                fetch(`${apiBase}/chat/stream`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                        'X-Session-ID': sessionId
-                    },
-                    body: message,
-                    signal: controller.signal
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erro na conexão com o servidor');
-                    }
-                    
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
-                    let buffer = '';
-                    
-                    hideTypingIndicator();
-                    let responseMessage = '';
-                    
-                    // Criar a div de resposta uma vez só
-                    let responseDiv = document.createElement('div');
-                    responseDiv.className = 'message bot-message stream-response';
-                    responseDiv.innerHTML = `
-                        <div class="message-avatar">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                    `;
-                    chatMessages.appendChild(responseDiv);
-                    scrollToBottom();
-                    
-                    console.log("Iniciando processamento do stream");
-                    
-                    // Função para processar os chunks do stream
-                    function processStream({ done, value }) {
-                        // Limpar o timeout se recebemos dados
-                        clearTimeout(timeoutId);
-                        
-                        if (done) {
-                            console.log("Stream finalizado");
-                            
-                            // Se não temos resposta até agora, adicione uma mensagem padrão
-                            if (!responseMessage.trim()) {
-                                console.log("Nenhuma resposta recebida no stream");
-                                responseMessage = "Não foi possível processar sua pergunta. Por favor, tente novamente.";
-                                responseDiv.innerHTML = `
-                                    <div class="message-avatar">
-                                        <i class="fas fa-robot"></i>
-                                    </div>
-                                    ${responseMessage}
-                                `;
-                                responseDiv.classList.remove('stream-response');
-                                scrollToBottom();
-                                return;
-                            }
-                            
-                            // Formatar o conteúdo final quando o streaming terminar
-                            if (responseMessage.includes('```')) {
-                                let formattedMessage = '';
-                                const parts = responseMessage.split('```');
-                                
-                                for (let i = 0; i < parts.length; i++) {
-                                    if (i % 2 === 0) {
-                                        // Texto normal
-                                        formattedMessage += parts[i];
-                                    } else {
-                                        // Código
-                                        formattedMessage += `<pre>${parts[i]}</pre>`;
-                                    }
-                                }
-                                
-                                responseDiv.innerHTML = `
-                                    <div class="message-avatar">
-                                        <i class="fas fa-robot"></i>
-                                    </div>
-                                    ${formattedMessage}
-                                `;
-                            } else {
-                                responseDiv.innerHTML = `
-                                    <div class="message-avatar">
-                                        <i class="fas fa-robot"></i>
-                                    </div>
-                                    ${responseMessage}
-                                `;
-                            }
-                            
-                            responseDiv.classList.remove('stream-response');
-                            scrollToBottom();
-                            return;
-                        }
-                        
-                        // Definir um novo timeout para cada chunk
-                        const chunkTimeoutId = setTimeout(() => controller.abort(), 60000); // 1 minuto
-                        
-                        // Decodificar e processar o chunk
-                        const chunk = decoder.decode(value, { stream: true });
-                        console.log("Chunk recebido:", chunk);
-                        
-                        // Limpar o timeout do chunk já que recebemos dados
-                        clearTimeout(chunkTimeoutId);
-                        
-                        // Se for o primeiro chunk a chegar, mostre logo
-                        if (responseMessage.length === 0 && chunk.trim()) {
-                            const initialContent = chunk.trim();
-                            if (initialContent.startsWith('data:')) {
-                                responseMessage = initialContent.substring(5).trim();
-                            } else {
-                                responseMessage = initialContent;
-                            }
-                            responseDiv.innerHTML = `
-                                <div class="message-avatar">
-                                    <i class="fas fa-robot"></i>
-                                </div>
-                                ${responseMessage}
-                            `;
-                            scrollToBottom();
-                        } else {
-                            // Para os próximos chunks, acumule diretamente
-                            responseMessage += chunk;
-                            responseDiv.innerHTML = `
-                                <div class="message-avatar">
-                                    <i class="fas fa-robot"></i>
-                                </div>
-                                ${responseMessage}
-                            `;
-                            scrollToBottom();
-                        }
-                        
-                        buffer += chunk;
-                        
-                        // Continuar lendo
-                        return reader.read().then(processStream);
-                    }
-                    
-                    // Iniciar o processamento do stream
-                    return reader.read().then(processStream);
-                })
-                .catch(error => {
-                    hideTypingIndicator();
-                    clearTimeout(timeoutId);
-                    console.error('Erro no streaming:', error);
-                    
-                    // Verificar se o erro é de timeout ou abortado
-                    let errorMessage = "Desculpe, ocorreu um erro na comunicação com o servidor.";
-                    
-                    if (error.name === 'AbortError') {
-                        errorMessage = "A resposta demorou muito tempo. Pode ser que o servidor esteja sobrecarregado.";
-                    }
-                    
-                    // Adicionar a mensagem de erro
-                    addBotMessage(`${errorMessage} Tente novamente mais tarde.`);
-                });
-            }
-            
-            // Enviar mensagem
-            messageForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const message = messageInput.value.trim();
-                if (!message) return;
-                
-                // Limpar o input
-                messageInput.value = '';
-                
-                // Adicionar mensagem do usuário
-                addUserMessage(message);
-                
-                // Conectar ao streaming
-                connectToStreamingFetch(message);
-            });
-            
-            // Animação ao carregar a página
-            setTimeout(() => {
-                document.querySelectorAll('.message').forEach(msg => {
-                    msg.style.opacity = '1';
-                    msg.style.transform = 'translateY(0)';
-                });
-            }, 100);
-            
-            // Focar no input
-            messageInput.focus();
+            // ... existing code ...
         });
     </script>
 </body>
-</html> 
+</html>
