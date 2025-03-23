@@ -1012,8 +1012,317 @@
                 });
             }
             
-            // ... existing code ...
+            // Funções do chat
+            
+            // Rolar para o final das mensagens
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Adicionar mensagem do usuário
+            function addUserMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
+                messageDiv.innerHTML = message;
+                chatMessages.appendChild(messageDiv);
+                scrollToBottom();
+            }
+            
+            // Adicionar mensagem do bot
+            function addBotMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot-message';
+                
+                // Adicionar avatar do bot e div para conteúdo da mensagem
+                messageDiv.innerHTML = '<div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-text"></div>';
+                
+                // Obter div de texto da mensagem
+                const messageText = messageDiv.querySelector('.message-text');
+                
+                // Processar formatação de código (texto entre ````)
+                if (message.includes('```')) {
+                    const parts = message.split('```');
+                    
+                    for (let i = 0; i < parts.length; i++) {
+                        if (i % 2 === 0) {
+                            // Texto normal
+                            messageText.innerHTML += parts[i];
+                        } else {
+                            // Código
+                            messageText.innerHTML += `<pre>${parts[i]}</pre>`;
+                        }
+                    }
+                } else {
+                    messageText.innerHTML = message;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                scrollToBottom();
+            }
+            
+            // Mostrar indicador de digitação
+            function showTypingIndicator() {
+                typingIndicator.style.display = 'block';
+                scrollToBottom();
+            }
+            
+            // Esconder indicador de digitação
+            function hideTypingIndicator() {
+                typingIndicator.style.display = 'none';
+            }
+            
+            // Gerar UUID para o chat
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
+            // Obter ou criar sessão UUID
+            function getSessionId() {
+                let sessionId = localStorage.getItem('chat_session_id');
+                if (!sessionId) {
+                    sessionId = generateUUID();
+                    localStorage.setItem('chat_session_id', sessionId);
+                }
+                return sessionId;
+            }
+            
+            // Conectar ao streaming da API
+            function connectToStreaming(message) {
+                const url = '/api/v1/chat/stream';
+                const sessionId = getSessionId();
+                
+                console.log('Iniciando conexão com streaming:', url);
+                showTypingIndicator();
+                
+                // Criar um novo elemento para a resposta do bot
+                const botMessageId = 'bot-' + generateUUID();
+                addBotMessage(''); // Iniciar com mensagem vazia que será atualizada
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Session-Id': sessionId
+                    },
+                    body: message
+                })
+                .then(response => {
+                    console.log('Status da resposta:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta: ' + response.status);
+                    }
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    
+                    function processStream() {
+                        return reader.read().then(({ done, value }) => {
+                            if (done) {
+                                console.log('Stream finalizado');
+                                if (buffer.length > 0) {
+                                    // Processar qualquer dado remanescente no buffer
+                                    processBuffer(buffer);
+                                }
+                                hideTypingIndicator();
+                                return;
+                            }
+                            
+                            const chunk = decoder.decode(value, { stream: true });
+                            console.log('Chunk recebido - tamanho em bytes:', value.length);
+                            
+                            buffer += chunk;
+                            processBuffer(buffer);
+                            buffer = ''; // Limpar o buffer após processamento
+                            
+                            return processStream();
+                        }).catch(error => {
+                            console.error('Erro ao ler stream:', error);
+                            hideTypingIndicator();
+                            // Adicionar mensagem de erro ao chat
+                            const lastBotMessage = document.querySelector('.bot-message:last-child .message-text');
+                            if (lastBotMessage) {
+                                lastBotMessage.innerHTML += 
+                                    '<br><span class="error-text">Erro na comunicação com o servidor.</span>';
+                            } else {
+                                addBotMessage('<span class="error-text">Erro na comunicação com o servidor.</span>');
+                            }
+                        });
+                    }
+                    
+                    function processBuffer(buffer) {
+                        const lines = buffer.split('\n');
+                        let addedText = '';
+                        
+                        lines.forEach(line => {
+                            if (line.trim() === '') return;
+                            
+                            let text;
+                            if (line.startsWith('data:')) {
+                                text = line.substring(5);
+                            } else {
+                                // Processar linhas que não seguem o formato SSE padrão
+                                text = line;
+                            }
+                            
+                            if (text && text.trim() !== '') {
+                                addedText += text;
+                            }
+                        });
+                        
+                        if (addedText) {
+                            console.log('Texto adicionado:', addedText);
+                            // Atualizar a última mensagem do bot
+                            const lastBotMessage = document.querySelector('.bot-message:last-child .message-text');
+                            
+                            // Verificar se o elemento existe antes de acessar innerHTML
+                            if (lastBotMessage) {
+                                const currentText = lastBotMessage.innerHTML || '';
+                                
+                                // Formatar código, links, etc. antes de adicionar ao DOM
+                                const formattedText = formatMessage(currentText + addedText);
+                                lastBotMessage.innerHTML = formattedText;
+                                
+                                // Rolar para baixo
+                                scrollToBottom();
+                            } else {
+                                console.error('Elemento message-text não encontrado na última mensagem do bot');
+                                // Criar uma nova mensagem do bot se não existir
+                                addBotMessage(formatMessage(addedText));
+                            }
+                        }
+                    }
+                    
+                    return processStream();
+                })
+                .catch(error => {
+                    console.error('Erro na conexão:', error);
+                    hideTypingIndicator();
+                    // Adicionar mensagem de erro ao chat
+                    const lastBotMessage = document.querySelector('.bot-message:last-child .message-text');
+                    if (lastBotMessage) {
+                        lastBotMessage.innerHTML += 
+                            '<br><span class="error-text">Erro na comunicação com o servidor: ' + error.message + '</span>';
+                    } else {
+                        // Se não existir uma mensagem do bot, criar uma nova com o erro
+                        addBotMessage('<span class="error-text">Erro na comunicação com o servidor: ' + error.message + '</span>');
+                    }
+                });
+            }
+            
+            // Enviar mensagem
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (!message) return;
+                
+                // Limpar o input
+                messageInput.value = '';
+                
+                // Adicionar mensagem do usuário
+                addUserMessage(message);
+                
+                // Conectar ao streaming
+                connectToStreaming(message);
+            });
+            
+            // Histórico de conversas
+            const historyButton = document.getElementById('history-button');
+            const historyPanel = document.getElementById('history-panel');
+            const closeHistory = document.getElementById('close-history');
+            const historyContent = document.getElementById('history-content');
+            
+            // Abrir painel de histórico
+            historyButton.addEventListener('click', function() {
+                historyPanel.classList.add('open');
+                carregarHistorico();
+            });
+            
+            // Fechar painel de histórico
+            closeHistory.addEventListener('click', function() {
+                historyPanel.classList.remove('open');
+            });
+            
+            // Carregar histórico de conversas
+            function carregarHistorico() {
+                historyContent.innerHTML = '<div class="history-loader"><div class="history-spinner"></div></div>';
+                
+                fetch('/api/v1/chat/historico')
+                    .then(response => response.json())
+                    .then(conversas => {
+                        if (conversas.length === 0) {
+                            historyContent.innerHTML = '<div class="history-empty">Nenhuma conversa encontrada</div>';
+                            return;
+                        }
+                        
+                        // Ordenar conversas por data (mais recentes primeiro)
+                        conversas.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        
+                        let html = '';
+                        conversas.forEach(conversa => {
+                            const data = new Date(conversa.timestamp);
+                            const dataFormatada = `${data.toLocaleDateString()} ${data.toLocaleTimeString()}`;
+                            
+                            html += `
+                            <div class="history-item" data-user="${conversa.userMessage}" data-bot="${conversa.botResponse}">
+                                <div class="history-date">${dataFormatada}</div>
+                                <div class="history-user-message">${conversa.userMessage}</div>
+                                <div class="history-bot-message">${conversa.botResponse.substring(0, 50)}${conversa.botResponse.length > 50 ? '...' : ''}</div>
+                            </div>
+                            `;
+                        });
+                        
+                        historyContent.innerHTML = html;
+                        
+                        // Adicionar evento de clique aos itens do histórico
+                        document.querySelectorAll('.history-item').forEach(item => {
+                            item.addEventListener('click', function() {
+                                const userMessage = this.getAttribute('data-user');
+                                const botResponse = this.getAttribute('data-bot');
+                                
+                                // Adicionar mensagens ao chat
+                                addUserMessage(userMessage);
+                                addBotMessage(botResponse);
+                                
+                                // Fechar painel de histórico
+                                historyPanel.classList.remove('open');
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        historyContent.innerHTML = `<div class="history-empty">Erro ao carregar histórico: ${error.message}</div>`;
+                    });
+            }
+            
+            // Focar no input
+            messageInput.focus();
         });
+
+        // Função para formatar mensagens (código, links, etc)
+        function formatMessage(text) {
+            if (!text) return '';
+            
+            // Substituir blocos de código
+            let formattedText = text.replace(/```([\s\S]*?)```/g, function(match, code) {
+                return '<pre><code>' + code + '</code></pre>';
+            });
+            
+            // Substituir código inline
+            formattedText = formattedText.replace(/`(.*?)`/g, '<code>$1</code>');
+            
+            // Substituir links
+            formattedText = formattedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+            
+            // Substituir quebras de linha
+            formattedText = formattedText.replace(/\n/g, '<br>');
+            
+            return formattedText;
+        }
     </script>
 </body>
 </html>
